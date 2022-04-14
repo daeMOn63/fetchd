@@ -671,27 +671,22 @@ func (app *App) GetSubspace(moduleName string) paramstypes.Subspace {
 }
 
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler("testupgrade", func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-		// manually add every existing modules to prevent the migration calling InitGenesis on them
-		fromVM[authz.ModuleName] = authzmodule.AppModule{}.ConsensusVersion()
-		fromVM[banktypes.ModuleName] = bank.AppModule{}.ConsensusVersion()
-		fromVM[capabilitytypes.ModuleName] = capability.AppModule{}.ConsensusVersion()
-		fromVM[crisistypes.ModuleName] = crisis.AppModule{}.ConsensusVersion()
-		fromVM[distrtypes.ModuleName] = distribution.AppModule{}.ConsensusVersion()
-		fromVM[stakingtypes.ModuleName] = staking.AppModule{}.ConsensusVersion()
-		fromVM[evidencetypes.ModuleName] = evidence.AppModule{}.ConsensusVersion()
-		fromVM[feegrant.ModuleName] = feegrantmodule.AppModule{}.ConsensusVersion()
-		fromVM[genutiltypes.ModuleName] = genutil.AppModule{}.ConsensusVersion()
-		fromVM[govtypes.ModuleName] = gov.AppModule{}.ConsensusVersion()
-		fromVM[ibchost.ModuleName] = ibc.AppModule{}.ConsensusVersion()
-		fromVM[minttypes.ModuleName] = mint.AppModule{}.ConsensusVersion()
-		fromVM[paramstypes.ModuleName] = params.AppModule{}.ConsensusVersion()
-		fromVM[slashingtypes.ModuleName] = slashing.AppModule{}.ConsensusVersion()
-		fromVM[ibctransfertypes.ModuleName] = transfer.AppModule{}.ConsensusVersion()
-		fromVM[authtypes.ModuleName] = auth.AppModule{}.ConsensusVersion()
-		fromVM[upgradetypes.ModuleName] = upgrade.AppModule{}.ConsensusVersion()
-		fromVM[vestingtypes.ModuleName] = vesting.AppModule{}.ConsensusVersion()
-		fromVM[wasm.ModuleName] = wasm.AppModule{}.ConsensusVersion()
+	app.UpgradeKeeper.SetUpgradeHandler("mint-upgrade", func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+		coins := sdk.NewCoins(
+			sdk.NewCoin("foocoin", sdk.NewInt(100000000)),
+		)
+		targetAccount, err := sdk.AccAddressFromBech32("fetch1szk3adhdmnljs9sacwvtuvyu79a23w4yzcshf8")
+		if err != nil {
+			return nil, err
+		}
+
+		if err := app.BankKeeper.MintCoins(ctx, minttypes.ModuleName, coins); err != nil {
+			return nil, err
+		}
+		if err := app.BankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, targetAccount, coins); err != nil {
+			return nil, err
+		}
+
 		return app.mm.RunMigrations(ctx, cfg, fromVM)
 	})
 }
