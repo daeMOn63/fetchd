@@ -24,7 +24,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -558,39 +557,39 @@ func New(
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
-	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
-	if err != nil {
-		panic(err)
-	}
+	// upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	if upgradeInfo.Name == "test-upgrade" && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{
-			Added: []string{
-				authz.ModuleName,
-				banktypes.ModuleName,
-				capabilitytypes.ModuleName,
-				crisistypes.ModuleName,
-				distrtypes.ModuleName,
-				stakingtypes.ModuleName,
-				evidencetypes.ModuleName,
-				feegrant.ModuleName,
-				genutiltypes.ModuleName,
-				govtypes.ModuleName,
-				ibchost.ModuleName,
-				minttypes.ModuleName,
-				paramstypes.ModuleName,
-				slashingtypes.ModuleName,
-				ibctransfertypes.ModuleName,
-				authtypes.ModuleName,
-				upgradetypes.ModuleName,
-				vestingtypes.ModuleName,
-				wasm.ModuleName,
-			},
-		}
+	// if upgradeInfo.Name == "testupgrade" && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+	// 	storeUpgrades := store.StoreUpgrades{
+	// 		Added: []string{
+	// 			authz.ModuleName,
+	// 			banktypes.ModuleName,
+	// 			capabilitytypes.ModuleName,
+	// 			crisistypes.ModuleName,
+	// 			distrtypes.ModuleName,
+	// 			stakingtypes.ModuleName,
+	// 			evidencetypes.ModuleName,
+	// 			feegrant.ModuleName,
+	// 			genutiltypes.ModuleName,
+	// 			govtypes.ModuleName,
+	// 			ibchost.ModuleName,
+	// 			minttypes.ModuleName,
+	// 			paramstypes.ModuleName,
+	// 			slashingtypes.ModuleName,
+	// 			ibctransfertypes.ModuleName,
+	// 			authtypes.ModuleName,
+	// 			upgradetypes.ModuleName,
+	// 			vestingtypes.ModuleName,
+	// 			wasm.ModuleName,
+	// 		},
+	// 	}
 
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
-	}
+	// 	// configure store loader that checks if version == upgradeHeight and applies store upgrades
+	// 	app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	// }
 
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
@@ -706,6 +705,29 @@ func (app *App) GetSubspace(moduleName string) paramstypes.Subspace {
 }
 
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
+	app.UpgradeKeeper.SetUpgradeHandler("testupgrade", func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+		// manually add every existing modules to prevent the migration calling InitGenesis on them
+		fromVM[authz.ModuleName] = authzmodule.AppModule{}.ConsensusVersion()
+		fromVM[banktypes.ModuleName] = bank.AppModule{}.ConsensusVersion()
+		fromVM[capabilitytypes.ModuleName] = capability.AppModule{}.ConsensusVersion()
+		fromVM[crisistypes.ModuleName] = crisis.AppModule{}.ConsensusVersion()
+		fromVM[distrtypes.ModuleName] = distribution.AppModule{}.ConsensusVersion()
+		fromVM[stakingtypes.ModuleName] = staking.AppModule{}.ConsensusVersion()
+		fromVM[evidencetypes.ModuleName] = evidence.AppModule{}.ConsensusVersion()
+		fromVM[feegrant.ModuleName] = feegrantmodule.AppModule{}.ConsensusVersion()
+		fromVM[genutiltypes.ModuleName] = genutil.AppModule{}.ConsensusVersion()
+		fromVM[govtypes.ModuleName] = gov.AppModule{}.ConsensusVersion()
+		fromVM[ibchost.ModuleName] = ibc.AppModule{}.ConsensusVersion()
+		fromVM[minttypes.ModuleName] = mint.AppModule{}.ConsensusVersion()
+		fromVM[paramstypes.ModuleName] = params.AppModule{}.ConsensusVersion()
+		fromVM[slashingtypes.ModuleName] = slashing.AppModule{}.ConsensusVersion()
+		fromVM[ibctransfertypes.ModuleName] = transfer.AppModule{}.ConsensusVersion()
+		fromVM[authtypes.ModuleName] = auth.AppModule{}.ConsensusVersion()
+		fromVM[upgradetypes.ModuleName] = upgrade.AppModule{}.ConsensusVersion()
+		fromVM[vestingtypes.ModuleName] = vesting.AppModule{}.ConsensusVersion()
+		fromVM[wasm.ModuleName] = wasm.AppModule{}.ConsensusVersion()
+		return app.mm.RunMigrations(ctx, cfg, fromVM)
+	})
 	app.UpgradeKeeper.SetUpgradeHandler("mint-upgrade", func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
 		coins := sdk.NewCoins(
 			sdk.NewCoin("foocoin", sdk.NewInt(100000000)),
