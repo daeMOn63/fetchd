@@ -557,40 +557,6 @@ func New(
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
-	// upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// if upgradeInfo.Name == "testupgrade" && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-	// 	storeUpgrades := store.StoreUpgrades{
-	// 		Added: []string{
-	// 			authz.ModuleName,
-	// 			banktypes.ModuleName,
-	// 			capabilitytypes.ModuleName,
-	// 			crisistypes.ModuleName,
-	// 			distrtypes.ModuleName,
-	// 			stakingtypes.ModuleName,
-	// 			evidencetypes.ModuleName,
-	// 			feegrant.ModuleName,
-	// 			genutiltypes.ModuleName,
-	// 			govtypes.ModuleName,
-	// 			ibchost.ModuleName,
-	// 			minttypes.ModuleName,
-	// 			paramstypes.ModuleName,
-	// 			slashingtypes.ModuleName,
-	// 			ibctransfertypes.ModuleName,
-	// 			authtypes.ModuleName,
-	// 			upgradetypes.ModuleName,
-	// 			vestingtypes.ModuleName,
-	// 			wasm.ModuleName,
-	// 		},
-	// 	}
-
-	// 	// configure store loader that checks if version == upgradeHeight and applies store upgrades
-	// 	app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
-	// }
-
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
 			tmos.Exit(err.Error())
